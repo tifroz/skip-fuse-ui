@@ -32,6 +32,7 @@ import SkipUI
 
 /// Define text content.
 struct TextSpec : Equatable, @unchecked Sendable {
+    var attributedContent: AttributedString?
     var verbatim: String?
     var key: LocalizedStringKey?
     var resource: AndroidLocalizedStringResource?
@@ -53,7 +54,9 @@ extension Text : SkipUIBridging {
             return view.Java_viewOrEmpty
         }
 
-        if let verbatim = spec.verbatim {
+        if let attributedContent = spec.attributedContent {
+            return SkipUI.Text(attributedRuns: attributedContent.attributedTextRuns)
+        } else if let verbatim = spec.verbatim {
             return SkipUI.Text(verbatim: verbatim)
         } else if let key = spec.key {
             let values = key.interpolation.values.isEmpty ? nil : key.interpolation.values
@@ -97,6 +100,8 @@ extension Text {
 }
 
 extension Text {
+    /// A text decoration. Android currently renders only solid single lines in
+    /// the text color, ignoring the pattern and separate color arguments.
     public struct LineStyle : Hashable, Sendable {
         public init(pattern: Text.LineStyle.Pattern = .solid, color: Color? = nil) {
         }
@@ -224,9 +229,11 @@ extension Text {
 }
 
 extension Text {
-    @available(*, unavailable)
-    public init(_ attributedContent: AttributedString) {
-        fatalError()
+    /// Display the current attributes and links of a native attributed string.
+    /// Renders font, foreground color, links, single solid decorations, baseline
+    /// offsets, and supported inline intents. Other stored attributes are ignored.
+    @_disfavoredOverload public init(_ attributedContent: AttributedString) {
+        self.init(spec: TextSpec(attributedContent: attributedContent))
     }
 }
 
